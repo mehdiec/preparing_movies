@@ -1,0 +1,15 @@
+FROM continuumio/miniconda3
+
+# Set up environment
+RUN conda create -n conda_env1 python=3.8
+
+# Activate environment
+RUN echo "source activate conda_env1" > ~/.bashrc
+ENV PATH /opt/conda/envs/conda_env1/bin:$PATH
+
+# Copy and install script dependencies
+COPY preparing_movies.py /app/
+WORKDIR /app
+RUN pip install -r requirements.txt
+
+CMD ["python", "preparing_movies.py"]
