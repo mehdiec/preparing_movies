@@ -6,6 +6,9 @@ import numpy as np
 from skimage import io, exposure
 from tqdm import tqdm
 import shutil
+import cv2
+import numpy as np
+from PIL import Image
 
 
 def format_4_decimals(num):
@@ -25,20 +28,13 @@ def create_folder(path):
 
 def rescale_to_uint8(
     image,
-    reference_image="/Volumes/u934/equipe_bellaiche/m_ech-chouini/test_movies_to_process/210507_vi_pupa1/210507_vi_pupa1_0236.tif",
+    lower_percentile=1,
+    upper_percentile=99, 
 ):
-    reference_image = io.imread(reference_image)
-    if reference_image is not None:
-        matched_image = exposure.match_histograms(image, reference_image)
-    else:
-        min_val = matched_image.min()
-        max_val = matched_image.max()
-        matched_image = ((matched_image - min_val) / (max_val - min_val) * 255).astype(
-            np.uint8
-        )
-    rescaled_image = matched_image.astype(np.uint8)
+    lower, upper = np.percentile(image, [lower_percentile, upper_percentile])
 
-    return rescaled_image
+    normalized_array = np.clip((image - lower) / (upper - lower) * 255, 0, 255)
+    return normalized_array.astype(np.uint8)
 
 
 def split_movie_in_frames(movie_folder, image):
@@ -55,9 +51,11 @@ def split_movie_in_frames(movie_folder, image):
             continue
         if frame.dtype != "uint8":
             frame = rescale_to_uint8(frame)
+            # frame = rescale_to_uint8(frame, None)
 
+        frame = rescale_to_uint8(frame)
         io.imsave(frame_path, frame)
-
+ 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
