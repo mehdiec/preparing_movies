@@ -11,7 +11,7 @@ SAP_PARAMETERS = """% SingleAnimalProcessing parameters (SAP_parameters)
 %% PROGRAMS TO RUN %%
 
 % PRE-segmentation
-TR =    0;                                  % "TimeRegistration" (NO PARAMETERS) (7.12) 
+TR =    1;                                  % "TimeRegistration" (NO PARAMETERS) (7.12) 
 SR =    0;                                  % "SpaceRegistration" (1 PARAMETER: clicktime) (7.12) 
 PIV =   0;                              	% "ParticleImageVelocimetry"
 GEP =   0;                                  % "GeneExpressionPattern" (GR<ID reguired)
@@ -35,7 +35,7 @@ MSM =   0;                                  % "MatlabShujiMatcher"
 SM =    0;                                  % "StressMap"
 
 % Time averaging
-AOT =   1;                                  % AverageOverTime
+AOT =   0;                                  % AverageOverTime
 POT =   0;                                  % PlotOverTime (8.6)
 
 % NB: 
@@ -744,7 +744,7 @@ def generate_animal_config(
 
     %% Synchronization & Scale %%
 
-    halfNotum = 'b';                            % Chose between 'l' (left) 'r' (right) and 'b' 'both'
+    halfNotum = 'r';                            % Chose between 'l' (left) 'r' (right) and 'b' 'both'
     frameRef = {frame};                              % frame # corresponding to "timeRef" determined by "TimeRegistration"              
     timeRef = '20h15';                          % "timeRef" ('HH f:MM' or decimal) corresponding to "frameRef" above     18h35 : ¾ of the patches rotation peak    20h15 : ¾ of the cellular divisions peak    25h58 : ¾ of the cellular migration peak
 
@@ -790,7 +790,16 @@ def generate_animal_config(
     return content
 
 
-def create_map_param(animals_1, animals_2, animal_root_1, animal_root_2, input_path):
+def create_map_param(all_animal_groups, animal_roots, input_path):
+    all_animals = [animal for group in all_animal_groups for animal in group]
+
+    animal_root_assignments = []
+    for animal_root, animal_group in zip(animal_roots, all_animal_groups):
+        formatted_animals = "; ".join(["'{}'".format(animal) for animal in animal_group])
+        animal_root_assignments.append(f"{animal_root} = {{{{{ {formatted_animals} }}}}};")
+
+    joined_animal_roots = '\n'.join(animal_root_assignments)
+
     map_params = f"""% MAP_parameters
 %
 % Defines the set of animals to analyze as well as parameters specific to
@@ -810,13 +819,13 @@ clear all; close all; %clc;  % Cleaning of workspace (DO NOT MODIFY)
 % Definition of animal lists often use for analysis:
 %--------------------------------------------------------------------------
 % Animal lists:
-{animal_root_1} = {{{';'.join(animals_1)}}};
-{animal_root_2} = {{{';'.join(animals_2)}}};
+{joined_animal_roots}
+all_ = {{{{{'; '.join(["'{}'".format(animal) for animal in all_animals])}}}}};
 %--------------------------------------------------------------------------
 % Animals to take into account in the average (selection of one of the above list)
 %--------------------------------------------------------------------------
-mapAnimal = '{animal_root_1}_test';                                               % name of average animal OR actual animal name (BIG1, TRBL4...) when processing single animal
-avgAnimals = {animal_root_1} 
+mapAnimal = '{animal_root}';                                               % name of average animal OR actual animal name (BIG1, TRBL4...) when processing single animal
+avgAnimals = all_
 PathName = '{input_path}';                             % Global output path: all outputs will be saved there in a structure file.
 
 %--------------------------------------------------------------------------
@@ -824,7 +833,7 @@ PathName = '{input_path}';                             % Global output path: all
 % ALL animals to consider to build commong grid:
 %--------------------------------------------------------------------------
 % allAnimals = [avgAnimalsWhite ; avgAnimalsActn];
-allAnimals = [{animal_root_1}; {animal_root_2}];
+allAnimals = avgAnimals;
 %--------------------------------------------------------------------------
 
 
@@ -858,17 +867,17 @@ nMacroMin = 4;
 
 %%% Archetype related
 % Parent folder that will contain archetypes made at different clicking times
-parentArchetypeFolder = ''; 
+parentArchetypeFolder = '{input_path}/Archetypes'; 
 
 % Prefix that will appear before "archetype_..." in folder name
-archetypeName = '';                                          
+archetypeName = '{animal_root}';                                          
 
 %%% Rescaled animal related:
 % Parent folder that will contain rescaled animals made at different clicking times
 parentRescaledAnimalsFolder = '';     
 
 % Prefix that will appear before "rescaled_..." in folder name
-rescaleName = '';                                            
+rescaleName = '{animal_root}';                                            
 
 makeSVG = false;
 
@@ -924,7 +933,7 @@ PLOT.imageFormatOutput = 'png';     % plot image type (png | svg). For PTE, pdf 
 % from 2 single animals (Qa1-Qa2), one HAS TO first "average" each of them through AOA in order to build a grid COMMON to BOTH animals.
 
 % Animal #1 minus Animal #2: the name of the output animal will be "A1-A2"
-deltaAnimals  = {{'{animal_root_2}' ; '{animal_root_1}'}};
+deltaAnimals  = {{'{animal_roots[0]}' ; '{animal_root}'}};
 % deltaAnimals  = {{ 'meanWT_grid26h' ; 'meanWT_grid26h'}};
 
 
