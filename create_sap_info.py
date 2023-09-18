@@ -1,10 +1,15 @@
 import argparse
+import json
 import os
 
 import pandas as pd
 from pathlib import Path
 
-from constants import SAP_PARAMETERS, create_map_param, generate_animal_config
+from constants import (
+    create_map_param,
+    create_sap_parameters,
+    generate_animal_config,
+)
 
 
 def read_rescaling_file(input_file):
@@ -125,36 +130,33 @@ def find_common_prefix(strings_list, min_occurrences=9):
     return common_prefix
 
 
-def main(input_folder_path):
+def main(
+    input_folder_path,
+    sr,
+    piv,
+    ra,
+    vm,
+    aot,
+    aoa,
+    dba,
+    ffbp,
+    ct,
+    archetype,
+    rescale,
+    animal_number,
+):
     output_folder_path = input_folder_path / "SAP_info"
-
-    rescaling_file_path = "/Volumes/u934/equipe_bellaiche/m_ech-chouini/fb_analysis/substraction-vhh_selection/Dg086_vhhGFP_rescaled_21h40_nMacroUsed=4/rescalingOutput.txt"  # Update with the actual path
-
-    rescaling_data = read_rescaling_file(rescaling_file_path)
 
     animals = [
         file_name.split(".")[0]
         for file_name in os.listdir(input_folder_path / Path("full_movies"))
         if file_name.lower().endswith((".tif"))
     ]
-
-    time_ref_dict = {
-        "DgRNAi_9": 47,
-        "DgRNAi_6": 27,
-        "wRNAi_6": 29,
-        "DgRNAi_8": 49,
-        "wRNAi_3": 50,
-        "wRNAi_12": 59,
-    }  # get_frame_ref_tr(input_folder_path, animals)
-
-    time_ref_dict = {
-        "Dg086_vhhGFP_2": 30,
-        "Dg086_Dg_4": 31,
-        "Dg086_Dg_3": 18,
-        "Dg086_vhhGFP_4": 60,
-        "Dg086_vhhGFP_9": 27,
-        "Dg086_Dg_8": 29,
-    }  # get_frame_ref_tr(input_folder_path, animals)
+    try:
+        with open(str(input_folder_paths) + "/peak_time.json", "r") as f:
+            time_ref_dict = json.load(f)
+    except FileNotFoundError:
+        time_ref_dict = {}
 
     animal_roots = []
     filtered_animals = animals.copy()
@@ -162,26 +164,91 @@ def main(input_folder_path):
 
     while filtered_animals:
         current_root = find_common_prefix(filtered_animals)
-        print(current_root)
         if current_root:
             animal_roots.append(current_root)
             current_group = [item for item in filtered_animals if current_root in item]
             all_animal_groups.append(current_group)
-            filtered_animals = [item for item in filtered_animals if current_root not in item]
+            filtered_animals = [
+                item for item in filtered_animals if current_root not in item
+            ]
         else:
             break
+    if not animal_roots:
+        animal_roots = [animal.split("_")[0] for animal in animals]
+        all_animal_groups = [[animal] for animal in animals]
+    print(animal_roots)
 
-    content = create_map_param(all_animal_groups, animal_roots, input_folder_path)
+    rescaling_data = {}
 
-    # output_file_path = output_folder_path / "MAP_parameters.m"
-    # with open(output_file_path, "w") as file:
-    #     file.write(content)
-    # print(f"Generated file: {output_file_path}")
+    # Loop through the list of animal roots to try different paths
+    for animal in animal_roots:
+        rescaling_file_path = f"{input_folder_path}/{animal}_rescaled_21h40_nMacroUsed=4/rescalingOutput.txt"
 
-    # output_file_path = output_folder_path / "SAP_parameters.m"
-    # with open(output_file_path, "w") as file:
-    #     file.write(SAP_PARAMETERS)
-    # print(f"Generated file: {output_file_path}")
+        try:
+            rescaling_data = read_rescaling_file(rescaling_file_path)
+            if (
+                rescaling_data
+            ):  # Assuming an empty dictionary means failure to read the file
+                break
+        except FileNotFoundError:
+            continue  # If the file doesn't exist, try the next animal root
+
+    if not rescaling_data:
+        print("Warning: No rescaling file could be read.")
+
+    generate_sap_files(
+        input_folder_path,
+        output_folder_path,
+        rescaling_data,
+        time_ref_dict=time_ref_dict,
+    )
+
+    content = create_map_param(
+        all_animal_groups,
+        animal_roots,
+        input_folder_path,
+        archetype,
+        rescale,
+        animal_number,
+        ra,
+        aoa,
+        dba,
+    )
+
+    output_file_path = output_folder_path / "MAP_parameters.m"
+    with open(output_file_path, "w") as file:
+        file.write(content)
+    print(f"Generated file: {output_file_path}")
+    content = create_map_param(
+        all_animal_groups,
+        animal_roots,
+        input_folder_path,
+        archetype,
+        rescale,
+        animal_number,
+        ra,
+        aoa,
+        dba,
+    )
+
+    output_file_path = output_folder_path / f"MAP_parameters{animal_number}.m"
+    with open(output_file_path, "w") as file:
+        file.write(content)
+    print(f"Generated file: {output_file_path}")
+
+    content = create_sap_parameters(
+        sr,
+        piv,
+        vm,
+        ffbp,
+        ct,
+        aot,
+    )
+
+    output_file_path = output_folder_path / "SAP_parameters.m"
+    with open(output_file_path, "w") as file:
+        file.write(content)
+    print(f"Generated file: {output_file_path}")
 
 
 if __name__ == "__main__":
@@ -194,7 +261,53 @@ if __name__ == "__main__":
     parser.add_argument(
         "parent_folder", type=Path, help="Path to folder containing the animal 1"
     )
-
+    parser.add_argument("-sr", action="store_true", default=False, required=False)
+    parser.add_argument("-ra", action="store_true", default=False, required=False)
+    parser.add_argument("-vm", action="store_true", default=False, required=False)
+    parser.add_argument("-aot", action="store_true", default=False, required=False)
+    parser.add_argument("-ffbp", action="store_true", default=False, required=False)
+    parser.add_argument("-ct", action="store_true", default=False, required=False)
+    parser.add_argument("-aoa", action="store_true", default=False, required=False)
+    parser.add_argument("-dba", action="store_true", default=False, required=False)
+    parser.add_argument("-piv", action="store_true", default=False, required=False)
+    parser.add_argument(
+        "-archetype", action="store_true", default=False, required=False
+    )
+    parser.add_argument("-rescale", action="store_true", default=False, required=False)
+    parser.add_argument(
+        "--animal",
+        type=int,
+        help="Path to folder containing the animal 1",
+        default=0,
+        required=False,
+    )
     args = parser.parse_args()
     input_folder_paths = args.parent_folder
-    main(input_folder_paths)
+    sr = 1 if args.sr else 0
+    ra = 1 if args.ra else 0
+    vm = 1 if args.vm else 0
+    aot = 1 if args.aot else 0
+    aoa = 1 if args.aoa else 0
+    dba = 1 if args.dba else 0
+    ffbp = 1 if args.ffbp else 0
+    ct = 1 if args.ct else 0
+    piv = 1 if args.piv else 0
+
+    archetype = args.archetype
+    rescale = args.rescale
+    animal_number = args.animal
+    main(
+        input_folder_paths,
+        sr,
+        piv,
+        ra,
+        vm,
+        aot,
+        aoa,
+        dba,
+        ffbp,
+        ct,
+        archetype,
+        rescale,
+        animal_number,
+    )
