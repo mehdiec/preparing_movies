@@ -1,0 +1,7 @@
+*.png
+*.m
+/__pycache__/*
+/junk/*
+/unused/*
+*.db
+*.db
