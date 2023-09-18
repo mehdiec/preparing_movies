@@ -1,26 +1,35 @@
-SAP_PARAMETERS = """% SingleAnimalProcessing parameters (SAP_parameters)
+def create_sap_parameters(
+    sr,
+    piv,
+    vm,
+    ffpb,
+    ct,
+    aot,
+    path_animaprocess="/home/polina/Documents/GitHub/AnimalProcessing",
+):
+    content = f"""% SingleAnimalProcessing parameters (SAP_parameters)
 %
 % Script where ALL program parameters are specified. This enables to easily
 % process several movies of different animals using the exact same
 % parameters.
 %
 % Version 8.9
-% Boris Guirao
-
+% Boris Guirao  
+addpath(genpath("{path_animaprocess}"));
 
 %% PROGRAMS TO RUN %%
 
 % PRE-segmentation
-TR =    1;                                  % "TimeRegistration" (NO PARAMETERS) (7.12) 
-SR =    0;                                  % "SpaceRegistration" (1 PARAMETER: clicktime) (7.12) 
-PIV =   0;                              	% "ParticleImageVelocimetry"
+TR =    0;                                  % "TimeRegistration" (NO PARAMETERS) (7.12) 
+SR =    {sr};                                  % "SpaceRegistration" (1 PARAMETER: clicktime) (7.12) 
+PIV =   {piv};                              	% "ParticleImageVelocimetry"
 GEP =   0;                                  % "GeneExpressionPattern" (GR<ID reguired)
-VM =    0;                                  % "VelocityMaps" (with modeVM = 'PIV' OR after cell tracking with modeVM = 'CT')
+VM =    {vm};                                  % "VelocityMaps" (with modeVM = 'PIV' OR after cell tracking with modeVM = 'CT')
 
 % POST-segmentation
-FFPB =  0;                                  % "FilterFourPixelBlocks" (NO PARAMETERS)
+FFPB =  {ffpb};                                  % "FilterFourPixelBlocks" (NO PARAMETERS)
 SIA =   0;                                  % "SegmentedImageAnalysis"
-CT =    0;                                  % "CellTracking" (NO PARAMETERS)(7.8)
+CT =    {ct};                                  % "CellTracking" (NO PARAMETERS)(7.8)
 HC =    0;                                  % "HolesCorrection" (NO PARAMETERS) (8.8)
 CTD =   0;                                  % "CellTrackingDisplay"
 CPT =   0;                                  % "CellPatchTracking"
@@ -35,7 +44,7 @@ MSM =   0;                                  % "MatlabShujiMatcher"
 SM =    0;                                  % "StressMap"
 
 % Time averaging
-AOT =   0;                                  % AverageOverTime
+AOT =   {aot};                                  % AverageOverTime
 POT =   0;                                  % PlotOverTime (8.6)
 
 % NB: 
@@ -106,7 +115,7 @@ colorNewDelJunctions = black;          % usually "black" (8.6)
 signOpacities = [0.8 0.3];          % ONLY relevant for "split+/-" and "circle" display types: specifies opacity of positive(white) and negative(black) disks, respectively.
 lineWidth = 1.5;                    % for circle, bars and ellipses (1.5 ok with BIG movies)
 normalizeMethod = 'mean';            % Using either 'min','mean' or 'max' of raw AreaRatios BULK values to renormalize them ALL with "Normalizer".
-EVstyles = {'-' ':'};               % ONLY relevant for "merged" display type: styles to display ellipse axes representing tensor eigenvalues (default {'-' ':'})
+EVstyles = {{'-' ':'}};               % ONLY relevant for "merged" display type: styles to display ellipse axes representing tensor eigenvalues (default {'-' ':'})
 
 % Grid/Clone related (6.0)    
 nLayers = 1;                        % **LAGRANGIAN ONLY**: number of layers to remove to define the bulk of the animal. Used nLayers = 3 for eLife formalism analysis.
@@ -135,8 +144,8 @@ resultsFolder = '';
 
 % NB: parameters are also relevant for "VelocityMaps" execution (8.2)
 
-% averageOverAll = { 'VM' ; 'TA'; 'AOS'; 'SM'};  % ALL programs over which average will be run (6.8)
-averageOverAll = {'VM'};
+% averageOverAll = {{ 'VM' ; 'TA'; 'AOS'; 'SM'}};  % ALL programs over which average will be run (6.8)
+averageOverAll = {{'VM'}};
 % NB: ALWAYS LIST "SM" FIRST, OTHERWISE THE MISSING FRAMES FROM STPE WILL ALSO APPEAR AS MISSING FOR AOS,TA AND !
 
 
@@ -169,31 +178,30 @@ saveSVG = false;
 
 %%% list of grid/clone compartments to average over and plot over time
 % COMP zones BIGwt2
-boxIJs{1} = [1 1 ; 2 1];
-boxIJs{2} = [4 1 ; 5 1];
-boxIJs{3} = [7 1 ; 6 1];
-boxIJs{4} = [9 1 ; 8 1];
-boxIJs{5} = [3 1];
-boxIJs{6} = [10 1];
+boxIJs{{1}} = [1 1 ; 2 1];
+boxIJs{{2}} = [4 1 ; 5 1];
+boxIJs{{3}} = [7 1 ; 6 1];
+boxIJs{{4}} = [9 1 ; 8 1];
+boxIJs{{5}} = [3 1];
+boxIJs{{6}} = [10 1];
 
 plotTypePOT = 'inst';        % "inst" or "cum" for cumulative
 plotRenormPOT = 'renorm';   % "raw" or "renorm", all curves absolute max are reset to 1
 
-Qs2Plot.iso =   {'EG', 'ED', 'ES', 'ER', 'EA'};
-% Qs2Plot.iso =   {'dnD', 'rPatchArea','rCellArea', 'Epsilon', 'EG', 'ES', 'ER', 'EA'};
-Qs2PlotMax.iso =    {};           % WT COMMON
+Qs2Plot.iso =   {{'EG', 'ED', 'ES', 'ER', 'EA'}};
+% Qs2Plot.iso =   {{'dnD', 'rPatchArea','rCellArea', 'Epsilon', 'EG', 'ES', 'ER', 'EA'}};
+Qs2PlotMax.iso =   { {}};           % WT COMMON
 
 
-% Qs2Plot.iso =   {'dnA/nCoreRNs', 'rPatchArea', 'PatchArea', 'U', 'rCellArea', 'CellArea'};
+% Qs2Plot.iso =   {{'dnA/nCoreRNs', 'rPatchArea', 'PatchArea', 'U', 'rCellArea', 'CellArea'}};
 % Qs2PlotMaxTF.iso = [      1,             1,           0,       1,      1,            1];
-% Qs2PlotMax.iso = {0.03,         0.14,            [],         6.5,      0.14,       59};       % WT COMP
-% Qs2PlotMax.iso = {0.043,         0.04,           [],         6,       0.14,       52};           % WT DEL
-% Qs2PlotMax.iso =    {0.045,        0.14,           [],         6.5,     0.14,       59};           % WT COMMON
-
-Qs2Plot.devDiag =   {'EG', 'ED', 'ES', 'ER', 'EA'};
-Qs2PlotMax.devDiag = {0.08}; 
-Qs2Plot.devOffDiag =   {'EG', 'ED', 'ES', 'ER', 'EA'};
-Qs2PlotMax.devOffDiag = {0.08};
+% Qs2PlotMax.iso = {{0.03,         0.14,            [],         6.5,      0.14,       59}};       % WT COMP
+% Qs2PlotMax.iso = {{0.043,         0.04,           [],         6,       0.14,       52}};           % WT DEL
+ 
+Qs2Plot.devDiag =   {{'EG', 'ED', 'ES', 'ER', 'EA'}};
+Qs2PlotMax.devDiag = {{0.08}}; 
+Qs2Plot.devOffDiag =   {{'EG', 'ED', 'ES', 'ER', 'EA'}};
+Qs2PlotMax.devOffDiag = {{0.08}};
 
 makePlotsAllPOT = [0;1];
 
@@ -215,14 +223,14 @@ divergenceDisplay = false;             % =1 Divergence_.png images will be saved
 % normalize_GEP = false; % put true if not pre-treated in Fiji. If false, images must have had undergone: remove background + normalize in Fiji first
 % percentage_GEP = 0.01; % to remove gaussian larger tail (only matters if normalize_GEP = true)
 
-plotTensorsGEP = {'Cad'};
+plotTensorsGEP = {{'Cad'}};
 
 if exist('uniqueScaleRatio_GEP','var')
     scaleBarLengthGEP = uniqueScaleBarLength_GEP ;
     scaleRatioGEP =  uniqueScaleRatio_GEP;  
 else
     scaleBarLengthGEP = 1;
-    scaleRatioGEP =     {3e2};
+    scaleRatioGEP =     {{3e2}};
     % quantities         ID               % NB: SHOULD ALWAYS BE LISTED IN THIS ORDER!!
 end
 killMeanTraceGEP = 0;
@@ -237,14 +245,14 @@ modeVM = 'PIV';
 PIVgridVM = 'L'; 
 
 % Possible quantities to plot: 'U' ; 'EpsilonVM' ; 'OmegaVM'
-plotTensorsVM = {'U' 'Epsilon' 'Omega'};    
+plotTensorsVM = {{'U' 'Epsilon' 'Omega'}};    
 
 takeImageNegative = true;
 
 if ~exist('scaleRatioVM','var')
     % quantities           U   Epsilon   Omega      
     % NB: SHOULD ALWAYS BE LISTED IN THIS ORDER
-    scaleRatioVM =        {30    5e3      5e3   };
+    scaleRatioVM =        {{30    5e3      5e3   }};
     scaleBarLengthVM =    [5    0.02      0.02  ];
 end
 
@@ -438,12 +446,12 @@ circleScaleFactor = 25;
 %% AOS PARAMETERS %%
 
 % Quantities to plot among "allQsAOS": 
-plotTensorsAOS = { 'Epsilon'}; % 'all', 'none' or 'Epsilon', 'Omega', 'U', 'M', 'I' , 'CDCad'.... 
-% plotTensorsAOS = {'dnD' 'dnA' 'rPatchArea' 'rCellArea'}; % 'all', 'none' or 'Epsilon', 'Omega', 'U', 'M', 'I' , 'CDCad'.... 
+plotTensorsAOS = {{ 'Epsilon'}}; % 'all', 'none' or 'Epsilon', 'Omega', 'U', 'M', 'I' , 'CDCad'.... 
+% plotTensorsAOS = {{'dnD' 'dnA' 'rPatchArea' 'rCellArea'}}; % 'all', 'none' or 'Epsilon', 'Omega', 'U', 'M', 'I' , 'CDCad'.... 
 
 imagePlotAOS = 'seg';       % 'raw' or 'seg'. Type of images to plot tensor contribution on (except for polarity always plotted on raw images). For 'raw', first raw image is picked.
 % Scaling and scale bars:
-scaleRatioAOS =     {5       5e2   5e1  2.5   1      1        200         1          15e2       5    2e1   2e3     2e2       20   2e2    5e3    1e3     2e2  [10 10]  [20 200] [20 200] };   % sets ratio setting size of ellipses or bars in tensor representation for M,I.
+scaleRatioAOS =     {{5       5e2   5e1  2.5   1      1        200         1          15e2       5    2e1   2e3     2e2       20   2e2    5e3    1e3     2e2  [10 10]  [20 200] [20 200] }};   % sets ratio setting size of ellipses or bars in tensor representation for M,I.
 %scaleBarLengthAOS = [1e-2    1e-1  0.1   2    50    20       0.25        1e2         0.1       20     5   5e-2    1e-1       5   2e-1    1e-2   0.1     1e-1     2        2        2     ];   % scale bar lengths for each contribution     
 scaleBarLengthAOS = [1e-2    1e-1  0.1   2    50    20       0.25        1e2         0.1       20     5   5e-2    1e-1        5   1e-1    5e-3   0.1     1e-1     2        2        2     ];   % scale bar lengths for each contribution     
 
@@ -459,10 +467,10 @@ displayHLC = false;           % to plot Half Link Categorization using TA backup
 renormM = 'nLinks';          % "nLinks" (resp "nCells") will use number of LINKS (resp. CELLS) gained/lost by each process P for M renormalization (5.2)
 
 % TENSOR display parameters---------------------------------------------------------------------------------------------
-plotTensorsTA = {'ES' 'ER' 'EG'  }; 
-% plotTensorsTA = {'EG' 'ER' 'Phi' 'EGeig' };    % list of tensors to plot. Can be {'all'} or {}. Look into "AllQsColorsUnits" for complete possible list.
-% plotTensorsTA = {'EG' 'ES' 'ER' 'ED' 'EA' 'Phi'};    % list of tensors to plot. Can be {'all'} or {}. Look into "AllQsColorsUnits" for complete possible list.
-skipTensorsTA = {};                            % list of tensors to skip in 
+plotTensorsTA = {{'ES' 'ER' 'EG'  }}; 
+% plotTensorsTA = {{'EG' 'ER' 'Phi' 'EGeig' }};    % list of tensors to plot. 
+% plotTensorsTA = {{'EG' 'ES' 'ER' 'ED' 'EA' 'Phi'}};    % list of tensors to plot. 
+skipTensorsTA = {{}};                            % list of tensors to skip in 
 killMeanTraceTA = 0;
 
 % Error display
@@ -472,7 +480,7 @@ errorFontSize = 8;
 
 % HALF-LINK display parameters------------------------------------------------------------------------------------------
 display_naHL = false;           % will also display HLs that are tagged "n/a" in all_HLC
-HLstyles = {'-' '--'};          % prefer '--' with png, ':' with pdf (resolution doesn't matter then)
+HLstyles = {{'-' '--'}};          % prefer '--' with png, ':' with pdf (resolution doesn't matter then)
 HLimageFormat = 'png';          % 'png' or 'pdf'
 linkWidth = 1;                  % line width of links between cell centroids (0.3 for full thorax)
 
@@ -485,8 +493,7 @@ if strcmp(plotType, 'dev+') || strcmp(plotType, 'dev-')
     
         srVector =       [ 1   1   1   3    1   1   1   1   1    1    1   1     1       1      1       1       1];
         sbVector =       [ 1   1   1  1/3   1   1   1   1   1    1    1   1     1       1      1       1       1];
-%     % % MCatList =   {'G';'S';'R';'Ds';'D';'A';'N';'F';'J';'Jb';'DM';'EU';'EGstar';'EPSI';'PhiU';'Ustar';'PhiUstar'}
-
+%     % % MCatList =   {{'G';'S';'R';'Ds';'D';'A';'N';'F';'J';'Jb';'DM';'EU';'EGstar';'EPSI';'PhiU';'Ustar';'PhiUstar'}}
         scaleRatioTA = num2cell(scaleRatioTA*srVector);  % CELL ARRAY
         scaleBarLengthTA = scaleBarLengthTA*sbVector;    % VECTOR
     else
@@ -502,7 +509,7 @@ elseif strcmp(plotType, 'circle')
         
         srVector =       [ 1   1  1   1  0.33  1   1   1   1    1    1   1    1      1      1       1       1];
         sbVector =       [ 1   1   1   1    1   1   1   1   1    1    1   1    1      1      1       1       1];
-        % % MCatList =   {'G';'S';'R';'Ds';'D';'A';'N';'F';'J';'Jb';'DM';'E';'EPSI';'Phi';'dMoldC';'Ustar';'PhiUstar'}
+        % % MCatList =   {{'G';'S';'R';'Ds';'D';'A';'N';'F';'J';'Jb';'DM';'E';'EPSI';'Phi';'dMoldC';'Ustar';'PhiUstar'}}
         scaleRatioTA = num2cell(scaleRatioTA*srVector);      % CELL ARRAY
         scaleBarLengthTA = scaleBarLengthTA*sbVector;        % VECTOR
     else
@@ -519,7 +526,7 @@ elseif strcmp(plotType, 'split+') || strcmp(plotType, 'split-')
         
         srVector =       [ 1   1   1   3    1   2   1   1   1    1    1   1     1       1      1       1       1];
         sbVector =       [ 1   1   1  1/3   1  1/2  1   1   1    1    1   1     1       1      1       1       1];
-%      % MCatList =      {'G';'S';'R';'Ds';'D';'A';'N';'F';'J';'Jb';'DM';'EU';'EGstar';'EPSI';'PhiU';'Ustar';'PhiUstar'}
+%      % MCatList =      {{'G';'S';'R';'Ds';'D';'A';'N';'F';'J';'Jb';'DM';'EU';'EGstar';'EPSI';'PhiU';'Ustar';'PhiUstar'}}
 
         scaleRatioTA = num2cell(scaleRatioTA*srVector);  % CELL ARRAY
         scaleBarLengthTA = scaleBarLengthTA*sbVector;    % VECTOR
@@ -579,7 +586,7 @@ circleSize = 5;            % size of circles pointing unmatched vertices
 
 makePlotsSM = false;                                % to generate plots right after computation (6.6)
 % display parameters:
-plotTensorsSM = {'S' 'SP' 'ST' 'P'};                              % tensors to plot: leave empty or 'none', 'all', or 'S' (total stress), 'SP' (pressure part), 'ST' (tension part). NB: use brackets {...} 
+plotTensorsSM = {{'S' 'SP' 'ST' 'P'}};                              % tensors to plot: leave empty or 'none', 'all', or 'S' (total stress), 'SP' (pressure part), 'ST' (tension part). NB: use brackets {...} 
 killMeanTraceSM =  [  1     1     1      1   ];     % will set average compartment trace to 0 in the plots (mean isotropic part = 0). Choose this when tensors are known up to an additive constant scaling and scale bars:
 % contributions       S    SP     ST     P
 
@@ -676,6 +683,7 @@ SAP
 % REMOVED EARLIER COMMENTS IN VERSION 8.7
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 """
+    return content
 
 
 def generate_animal_config(
@@ -790,15 +798,28 @@ def generate_animal_config(
     return content
 
 
-def create_map_param(all_animal_groups, animal_roots, input_path):
+def create_map_param(
+    all_animal_groups,
+    animal_roots,
+    input_path,
+    archetype,
+    rescale,
+    animal_number,
+    ra,
+    aoa,
+    dba,
+    path_animaprocess="/home/polina/Documents/GitHub/AnimalProcessing",
+):
     all_animals = [animal for group in all_animal_groups for animal in group]
 
     animal_root_assignments = []
     for animal_root, animal_group in zip(animal_roots, all_animal_groups):
-        formatted_animals = "; ".join(["'{}'".format(animal) for animal in animal_group])
-        animal_root_assignments.append(f"{animal_root} = {{{{{ {formatted_animals} }}}}};")
+        formatted_animals = "; ".join(
+            ["'{}'".format(animal) for animal in animal_group]
+        )
+        animal_root_assignments.append(f"{animal_root} = {{ {formatted_animals} }};")
 
-    joined_animal_roots = '\n'.join(animal_root_assignments)
+    joined_animal_roots = "\n".join(animal_root_assignments)
 
     map_params = f"""% MAP_parameters
 %
@@ -812,6 +833,7 @@ def create_map_param(all_animal_groups, animal_roots, input_path):
 % Boris Guirao
 
 clear all; close all; %clc;  % Cleaning of workspace (DO NOT MODIFY)
+addpath(genpath("{path_animaprocess}"));
 
 
 %% ANIMALS TO INCLUDE %%
@@ -820,12 +842,12 @@ clear all; close all; %clc;  % Cleaning of workspace (DO NOT MODIFY)
 %--------------------------------------------------------------------------
 % Animal lists:
 {joined_animal_roots}
-all_ = {{{{{'; '.join(["'{}'".format(animal) for animal in all_animals])}}}}};
+all_ = {{{'; '.join(["'{}'".format(animal) for animal in all_animals])}}};
 %--------------------------------------------------------------------------
 % Animals to take into account in the average (selection of one of the above list)
 %--------------------------------------------------------------------------
-mapAnimal = '{animal_root}';                                               % name of average animal OR actual animal name (BIG1, TRBL4...) when processing single animal
-avgAnimals = all_
+mapAnimal = '{animal_roots[animal_number]}';                                               % name of average animal OR actual animal name (BIG1, TRBL4...) when processing single animal
+avgAnimals = animal_roots[animal_number]
 PathName = '{input_path}';                             % Global output path: all outputs will be saved there in a structure file.
 
 %--------------------------------------------------------------------------
@@ -833,18 +855,18 @@ PathName = '{input_path}';                             % Global output path: all
 % ALL animals to consider to build commong grid:
 %--------------------------------------------------------------------------
 % allAnimals = [avgAnimalsWhite ; avgAnimalsActn];
-allAnimals = avgAnimals;
+allAnimals = all_;
 %--------------------------------------------------------------------------
 
 
 %% Operation Name (Oname) Selection / PROGRAMS TO RUN %%
 
 % PRE-segmentation
-RA = 0;                % "RescaleAnimals"
+RA = {ra};                % "RescaleAnimals"
 
 % POST-segmentation
-AOA = 0;               % "AverageOverAnimals"
-DBA = 0;               % "DifferenceBetwenArchetypes"
+AOA = {aoa};               % "AverageOverAnimals"
+DBA = {dba};               % "DifferenceBetwenArchetypes"
 POA = 0;               % "ProjectionOverAnimals"
 PTE = 0;               % "PlotTimeEvolution"
 
@@ -852,8 +874,10 @@ PTE = 0;               % "PlotTimeEvolution"
 % COQ = 0;               % "CalculOverQuantities"
 % CCF = 1;              % Cross-Correlation Function
 % TC  = 0;               % Tensor Corelator (in progress)
+"""
 
-
+    if rescale:
+        map_params += f"""
 %% RA - RescaleAnimals (3.0)%%
 
 % Enter "Archetype" to CREATE archetype OR "Rescale" to use existing archetype for RESCALING
@@ -867,18 +891,50 @@ nMacroMin = 4;
 
 %%% Archetype related
 % Parent folder that will contain archetypes made at different clicking times
-parentArchetypeFolder = '{input_path}/Archetypes'; 
+parentArchetypeFolder = '{input_path}'; 
 
 % Prefix that will appear before "archetype_..." in folder name
-archetypeName = '{animal_root}';                                          
+archetypeName = '{animal_roots[0]}';                                          
 
 %%% Rescaled animal related:
 % Parent folder that will contain rescaled animals made at different clicking times
-parentRescaledAnimalsFolder = '';     
+parentRescaledAnimalsFolder = '{input_path}';     
 
 % Prefix that will appear before "rescaled_..." in folder name
-rescaleName = '{animal_root}';                                            
+rescaleName = '{animal_roots[0]}';                                            
 
+
+"""
+    else:
+        map_params += f"""
+%% RA - RescaleAnimals (3.0)%%
+
+% Enter "Archetype" to CREATE archetype OR "Rescale" to use existing archetype for RESCALING
+rescaleMode = 'Archetype';       
+
+% Time at which landmarks were clicked IN ALL MOVIES
+clickTimeAll = '21h40'; 
+
+% Minimum number of macrochaetes AVAILABLE (ON EACH SIDE OF ANIMAL if halfNotum = 'b') in all animals to process (USED TO CALCULATE BARYCENTERS)
+nMacroMin = 4;   
+
+%%% Archetype related
+% Parent folder that will contain archetypes made at different clicking times
+parentArchetypeFolder = '{input_path}'; 
+
+% Prefix that will appear before "archetype_..." in folder name
+archetypeName = '{animal_roots[0]}';                                          
+
+%%% Rescaled animal related:
+% Parent folder that will contain rescaled animals made at different clicking times
+parentRescaledAnimalsFolder = '{input_path}';     
+
+% Prefix that will appear before "rescaled_..." in folder name
+rescaleName = '{animal_roots[0]}';                                            
+
+
+"""
+    map_params += f"""
 makeSVG = false;
 
 %% Quantities to be PLOTTED and PROJECTED
@@ -933,7 +989,7 @@ PLOT.imageFormatOutput = 'png';     % plot image type (png | svg). For PTE, pdf 
 % from 2 single animals (Qa1-Qa2), one HAS TO first "average" each of them through AOA in order to build a grid COMMON to BOTH animals.
 
 % Animal #1 minus Animal #2: the name of the output animal will be "A1-A2"
-deltaAnimals  = {{'{animal_roots[0]}' ; '{animal_root}'}};
+deltaAnimals  = {{'{animal_roots[0]}' ; '{animal_roots[1]}'}};
 % deltaAnimals  = {{ 'meanWT_grid26h' ; 'meanWT_grid26h'}};
 
 
